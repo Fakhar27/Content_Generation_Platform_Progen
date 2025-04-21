@@ -1,10 +1,14 @@
+// app/api/generate-video/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { auth } from "@clerk/nextjs/server";
 import { supabase } from '@/lib/supabaseClient';
 
-
-const BACKEND_URL = process.env.BACKEND_URL || 'http://127.0.0.1:8000';
+// Get backend URL with robust fallback strategy
+const BACKEND_URL = process.env.BACKEND_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'http://backend:8000'  // Docker service name for ECS internal communication
+    : 'http://127.0.0.1:8000'); // Local development
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,21 +37,16 @@ export async function POST(request: NextRequest) {
         timeout: 30 * 60 * 1000, // 30 minutes
       });
 
-
-
-      console.log(response.data.video)
-
       const base64Video = response.data.video_data; 
-    if (!base64Video) {
-      return NextResponse.json({ error: 'No video data returned from backend' }, { status: 500 });
-    }
+      if (!base64Video) {
+        return NextResponse.json({ error: 'No video data returned from backend' }, { status: 500 });
+      }
 
-    // Strip the data URL prefix if it's included
-    const cleanedBase64 = base64Video.replace(/^data:video\/mp4;base64,/, '');
+      // Strip the data URL prefix if it's included
+      const cleanedBase64 = base64Video.replace(/^data:video\/mp4;base64,/, '');
 
-    // Convert base64 to a buffer
-    const videoBuffer = Buffer.from(cleanedBase64, 'base64');
-
+      // Convert base64 to a buffer
+      const videoBuffer = Buffer.from(cleanedBase64, 'base64');
       
       const timestamp = new Date().getTime();
       const filename = `${userId}_${timestamp}.mp4`;
@@ -101,7 +100,6 @@ export async function POST(request: NextRequest) {
         );
       }
       
-
       return NextResponse.json({
         success: true,
         videoId: videoData.id,
