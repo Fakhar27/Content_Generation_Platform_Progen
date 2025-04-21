@@ -32,9 +32,6 @@ load_dotenv()
 
 # ------------------------ APIs ------------------------ #
 co = cohere.Client(os.getenv("CO_API_KEY"))
-# API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell"
-# API_URL = "https://api-inference.huggingface.co/models/Lykon/DreamShaper"
-# headers = {"Authorization": os.getenv(HUGGING_FACE_API_KEY)}
 COLAB_URL = "https://87c7-35-185-226-172.ngrok-free.app"
 COLAB_URL_2 = ""
 COLAB_URL_3 = ""
@@ -129,11 +126,6 @@ async def generate_content(request):
                 "error": "Required services not configured. Update URLs first."
             }, status=500)
             
-        # content_request = ContentRequest(
-        #     prompt=data.get("prompt"),
-        #     genre=data.get("genre", "Adventure"),
-        #     iterations=data.get("iterations", 4)
-        # )
         content_request = ContentRequest(
             prompt=data.get("prompt"),
             genre=data.get("genre", "cyberpunk"),
@@ -163,105 +155,8 @@ async def generate_content(request):
         error_msg = f"Content generation error: {str(e)}"
         logger.error(error_msg)
         return JsonResponse({"error": error_msg}, status=500)
-# @csrf_exempt
-# async def generate_content(request):
-#     if request.method != 'POST':
-#         return JsonResponse({"error": "Invalid request method."}, status=405)
-        
-#     try:
-#         data = json.loads(request.body)
-        
-#         # TESTING ONLY: Override parameters for testing
-#         test_mode = "normal"  # Options: "normal", "hf_image", "hf_video"
-        
-#         # Force Hugging Face for testing
-#         if test_mode == "hf_image":
-#             logger.info("TESTING MODE: Using Hugging Face for image generation")
-#             use_hf_inference = True
-#             use_hf_video = False
-#         elif test_mode == "hf_video":
-#             logger.info("TESTING MODE: Using Hugging Face for direct video generation")
-#             use_hf_inference = True
-#             use_hf_video = True
-#         else:
-#             use_hf_inference = not COLAB_URL
-#             use_hf_video = False
-            
-#         content_request = ContentRequest(
-#             prompt=data.get("prompt"),
-#             genre=data.get("genre", "cyberpunk"),
-#             iterations=data.get("iterations", 4),
-#             backgroundVideo=data.get("backgroundType", "urban"),
-#             backgroundMusic=data.get("musicType", "synthwave"),
-#             voiceType=data.get("voiceType", "v2/en_speaker_6"),
-#             subtitleColor=data.get("subtitleColor", "#ff00ff"),
-#             useHfInference=use_hf_inference,
-#             useHfVideo=use_hf_video,
-#             hfImageModel="black-forest-labs/FLUX.1-schnell",
-#             hfVideoModel="Wan-AI/Wan2.1-T2V-14B"
-#         )
-        
-#         logger.info(f"Content request: {content_request}")
-        
-#         service = await get_story_chain_service()
-#         result = await service.generate_content_pipeline(content_request)
-        
-#         response_data = {
-#             "success": True,
-#             "video_data": result["video_data"],
-#             "content_type": result["content_type"],
-#             "metrics": result["metrics"]
-#         }
-        
-#         logger.info("Returning video response")
-#         return JsonResponse(response_data, status=200)
-            
-#     except Exception as e:
-#         error_msg = f"Content generation error: {str(e)}"
-#         logger.error(error_msg)
-#         logger.error(traceback.format_exc())  # Add traceback for better debugging
-#         return JsonResponse({"error": error_msg}, status=500)
-    
 
-@csrf_exempt
-def generate_voice(request):
-    """Handle voice generation requests"""
-    global COLAB_URL_2
-    if request.method == 'POST':
-        try:
-            if not COLAB_URL_2:
-                return JsonResponse({"error": "Colab service not available"}, status=503)
 
-            data = json.loads(request.body)
-            text = data.get('text')
-            
-            if not text:
-                return JsonResponse({"error": "Text is required"}, status=400)
-
-            response = requests.post(
-                f"{COLAB_URL_2}/generate-speech",
-                json={"text": text},
-                timeout=90
-            )
-            
-            if response.status_code == 200:
-                return JsonResponse(response.json())
-            else:
-                return JsonResponse(
-                    {"error": "Failed to generate audio"}, 
-                    status=response.status_code
-                )
-
-        except requests.exceptions.RequestException as e:
-            return JsonResponse(
-                {"error": f"Failed to connect to Colab service: {str(e)}"}, 
-                status=503
-            )
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
-
-    return JsonResponse({"error": "Invalid method"}, status=405)
-        
 
 
 # ---------------------- AUTH AND USER MANAGEMENT ----------------------
@@ -318,42 +213,3 @@ def getNotes(request):
     Notes = user.notes_set.all()  
     serializer = notesSerializers(Notes, many=True)
     return Response(serializer.data)
-
-
-
-
-
-
-
-
-
-
-# def generate_image(request):
-#     if request.method == 'POST':
-#         try:
-#             data = json.loads(request.body)
-#             prompt = data.get('prompt')
-#             logger.info(f"Received prompt: {prompt}")
-#         except json.JSONDecodeError as e:
-#             logger.error(f"JSON decode error: {str(e)}")
-#             return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-#         if not prompt:
-#             logger.error("No prompt provided")
-#             return JsonResponse({"error": "Prompt is required"}, status=400)
-
-#         try:
-#             logger.info(f"Sending request to Hugging Face API with prompt: {prompt}")
-#             response = requests.post(API_URL, headers=headers, json={"inputs": prompt})
-#             response.raise_for_status()
-
-#             image_bytes = response.content
-#             image_base64 = base64.b64encode(image_bytes).decode('utf-8')
-#             logger.info("Successfully generated image")
-#             return JsonResponse({"image_data": image_base64}, status=200)
-#         except requests.exceptions.RequestException as e:
-#             logger.error(f"Error from Hugging Face API: {str(e)}")
-#             return JsonResponse({"error": f"Error from Hugging Face API: {str(e)}"}, status=500)
-#         except Exception as e:
-#             logger.error(f"Unexpected error: {str(e)}")
-#             return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
