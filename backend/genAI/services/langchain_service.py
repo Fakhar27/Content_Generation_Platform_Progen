@@ -21,11 +21,6 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-# class ContentRequest(BaseModel):
-#     """Request model for story generation"""
-#     prompt: str = Field(..., description="User's content prompt")
-#     genre: str = Field(..., description="Content category/genre")
-#     iterations: int = Field(default=4, ge=1, le=10)
 class ContentRequest(BaseModel):
     """Request model for story generation"""
     prompt: str = Field(..., description="User's content prompt")
@@ -35,10 +30,6 @@ class ContentRequest(BaseModel):
     backgroundMusic: str = Field(default="1", description="Background music type")
     voiceType: str = Field(default="v2/en_speaker_6", description="Voice type (male or female)")
     subtitleColor: str = Field(default="#ff00ff", description="Subtitle text color")
-    # useHfInference: bool = Field(default=False, description="Whether to use Hugging Face Inference API")
-    # hfImageModel: str = Field(default="black-forest-labs/FLUX.1-schnell", description="HF model for image generation")
-    # useHfVideo: bool = Field(default=False, description="Whether to use Hugging Face for video generation")
-    # hfVideoModel: str = Field(default="Wan-AI/Wan2.1-T2V-14B", description="HF model for video generation")
 
 class ContentResponse(BaseModel):
     """Response model for each story iteration"""
@@ -96,19 +87,8 @@ class StoryIterationChain:
         self.whisper_url = whisper_url or os.getenv("COLAB_URL_3")
         
         # Colab URL for image generation is now optional
-        self.colab_url = colab_url or os.getenv("COLAB_URL")
         
-        # Initialize Hugging Face service if needed
-        try:
-            from .huggingface_service import HuggingFaceService
-            self.hf_service = HuggingFaceService()
-            self.hf_available = True
-            logger.info("Hugging Face service initialized")
-        except ImportError:
-            self.hf_service = None
-            self.hf_available = False
-            logger.warning("Hugging Face service not available. Install with: pip install huggingface_hub")
-            
+        self.colab_url = colab_url or os.getenv("COLAB_URL")
         self.prefixes = {
             "story": "story:",
             "image": "image:"
@@ -290,59 +270,6 @@ class StoryIterationChain:
                 
         return None
 
-    async def generate_image_hf(self, prompt: str, model_id: str = "black-forest-labs/FLUX.1-schnell") -> Optional[str]:
-        """Generate image using Hugging Face API with direct API calls"""
-        try:
-            logger.info(f"Using HuggingFace direct API for image generation with model: {model_id}")
-            logger.info(f"Prompt: {prompt}")
-
-            # Import here to avoid circular imports (as in your original code)
-            # NOTE: This assumes huggingface_service contains the actual implementation
-            from .huggingface_service import generate_image_with_hf
-
-            # Call the direct API function (assuming it's correctly implemented in huggingface_service)
-            image_data = await generate_image_with_hf(prompt, model_id)
-
-            if not image_data:
-                logger.error("No image data returned from Hugging Face")
-                return None
-
-            logger.info("Successfully generated image with Hugging Face")
-            return image_data
-
-        except Exception as e:
-            logger.error(f"Error in HF image generation: {str(e)}")
-            # logger.error(traceback.format_exc())
-            return None
-
-
-    async def generate_video_hf(self, prompt: str, model_id: str = "cerspense/zeroscope_v2_XL") -> Optional[str]:
-        """Generate video directly using Hugging Face API"""
-        try:
-            logger.info(f"Using HuggingFace direct API for video generation with model: {model_id}")
-            logger.info(f"Prompt: {prompt}")
-
-            # Import here to avoid circular imports (as in your original code)
-            # NOTE: This assumes huggingface_service contains the actual implementation
-            from .huggingface_service import generate_video_with_hf
-
-            # Call the direct API function (assuming it's correctly implemented in huggingface_service)
-            video_data = await generate_video_with_hf(prompt, model_id)
-
-            if not video_data:
-                logger.error("No video data returned from Hugging Face")
-                return None
-
-            logger.info("Successfully generated video with Hugging Face")
-            return video_data
-
-        except Exception as e:
-            logger.error(f"Error in HF video generation: {str(e)}")
-            # logger.error(traceback.format_exc())
-            return None
-                            
-    
-    
     
     # WORKSSSSSSS
     @traceable(run_type="chain")
@@ -436,15 +363,6 @@ class StoryIterationChain:
                     
                     logger.info(f"Selected background video: {background_video_path}")
                     logger.info(f"Selected background music: {background_audio_path}")
-                    
-                    # Fallback to hardcoded paths if S3 download fails
-                    if not background_video_path:
-                        background_video_path = "E:\\fyp_backend\\backend\\genAI\\split_screen_video_1.mp4"
-                        logger.warning(f"Using fallback video path: {background_video_path}")
-                    
-                    if not background_audio_path:
-                        background_audio_path = "E:\\fyp_backend\\backend\\genAI\\backgroundMusic1.wav"
-                        logger.warning(f"Using fallback audio path: {background_audio_path}")
                     
                     logger.info("Starting video concatenation")
                     final_video_path = video_manager.concatenate_segments(
