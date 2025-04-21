@@ -1,17 +1,20 @@
-FROM python:3.11-slim
+FROM python:3.11.5
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     ffmpeg \
     libsm6 \
     libxext6 \
+    portaudio19-dev \  
     && rm -rf /var/lib/apt/lists/*
 
-# Create a requirements.txt file with your dependencies
+# Upgrade pip (Good Practice)
+RUN pip install --upgrade pip
+
+# Copy requirements.txt before installing dependencies to leverage Docker cache
 COPY requirements.txt .
 
 # Install Python dependencies
