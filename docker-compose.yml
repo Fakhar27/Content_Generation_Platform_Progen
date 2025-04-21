@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./Fyp-Frontend-2
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+        - NEXT_PUBLIC_SUPABASE_SERVICE_KEY=${NEXT_PUBLIC_SUPABASE_SERVICE_KEY}
+        - BACKEND_URL=http://backend:8000
+        - NEXT_PUBLIC_CLERK_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_URL}
+        - NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL}
+        - NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=${NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL}
+        - NEXT_PUBLIC_DISABLE_OVERLAY=${NEXT_PUBLIC_DISABLE_OVERLAY}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - progen-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - LANGSMITH_TRACING=${LANGSMITH_TRACING}
+      - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT}
+      - CO_API_KEY=${CO_API_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
+      - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME}
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+      - DEBUG=True
+      - ALLOWED_HOSTS=*
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://frontend:3000
+    networks:
+      - progen-network
+
+networks:
+  progen-network:
+    driver: bridge
