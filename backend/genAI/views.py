@@ -32,67 +32,6 @@ load_dotenv()
 
 # ------------------------ APIs ------------------------ #
 co = cohere.Client(os.getenv("CO_API_KEY"))
-COLAB_URL = "https://87c7-35-185-226-172.ngrok-free.app"
-COLAB_URL_2 = ""
-COLAB_URL_3 = ""
-# OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-# if not OPENAI_API_KEY:
-#     logger.warning("OPENAI_API_KEY environment variable not set")
-
-
-# ------------------------ FUNCTIONS ------------------------ #
-
-# use with colab or sagemaker
-@csrf_exempt
-def update_ngrok_url(request):
-    global COLAB_URL  
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            ngrok_url = data.get('ngrok_url')
-            if not ngrok_url:
-                return JsonResponse({"error": "Ngrok URL is required"}, status=400)
-
-            COLAB_URL = ngrok_url
-            print(f"Received and updated Ngrok URL: {COLAB_URL}")
-
-            return JsonResponse({"message": "Ngrok URL updated successfully"}, status=200)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
-    else:
-        return JsonResponse({"error": "Invalid request method"}, status=405)
-    
-@csrf_exempt
-def update_ngrok_url_voice(request):
-    """Endpoint for Colab to register its URL"""
-    global COLAB_URL_2
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            ngrok_url = data.get('ngrok_url')
-            if ngrok_url:
-                COLAB_URL_2 = ngrok_url
-                return JsonResponse({"message": "URL updated successfully"})
-            return JsonResponse({"error": "No URL provided"}, status=400)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
-    return JsonResponse({"error": "Invalid method"}, status=405)
-
-@csrf_exempt
-def update_ngrok_url_whisper(request):
-    """ENDPOINT FOR NGROK COLAB NOTEBOOK FOR WHISPER SOUND PROCESSING"""
-    global COLAB_URL_3
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            ngrok_url = data.get("ngrok_url")
-            if ngrok_url:
-                COLAB_URL_3 = ngrok_url
-                return JsonResponse({"message": "URL updated successfully"})
-            return JsonResponse({"error": "No URL provided"}, status=400)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
-    return JsonResponse({"error": "Invalid method"}, status=405)
     
 langchain_service = None
 story_chain_service = None
@@ -100,11 +39,13 @@ story_chain_service = None
 async def get_story_chain_service():
     """Async factory function for StoryIterationChain"""
     try:
+        # Use environment variable for AI service URL
+        ai_service_url = os.getenv("AI_SERVICE_URL", "http://ai-service:5000")
+        
         service = StoryIterationChain(
-            # colab_url=COLAB_URL,
-            colab_url="abcd", 
-            voice_url=COLAB_URL_2, 
-            whisper_url=COLAB_URL_3
+            colab_url=f"{ai_service_url}/generate-image", 
+            voice_url=f"{ai_service_url}/generate_sound", 
+            whisper_url=f"{ai_service_url}/process_audio"
         )
         logger.info("StoryIterationChain service created successfully")
         return service
@@ -119,12 +60,6 @@ async def generate_content(request):
         
     try:
         data = json.loads(request.body)
-        
-        if not COLAB_URL or not COLAB_URL_2 or not COLAB_URL_3:
-            logger.error("COLAB_URL or COLAB_URL_2 or COLAB_URL_3 not set")
-            return JsonResponse({
-                "error": "Required services not configured. Update URLs first."
-            }, status=500)
             
         content_request = ContentRequest(
             prompt=data.get("prompt"),
