@@ -39,13 +39,15 @@ story_chain_service = None
 async def get_story_chain_service():
     """Async factory function for StoryIterationChain"""
     try:
-        # Use environment variable for AI service URL
-        ai_service_url = os.getenv("AI_SERVICE_URL", "http://ai-service:5000")
+        # Use environment variables for each service
+        image_service_url = os.getenv("IMAGE_SERVICE_URL", "http://image-service:5000")
+        voice_service_url = os.getenv("VOICE_SERVICE_URL", "http://voice-service:5000")
+        whisper_service_url = os.getenv("WHISPER_SERVICE_URL", "http://whisper-service:5000")
         
         service = StoryIterationChain(
-            colab_url=f"{ai_service_url}/generate-image", 
-            voice_url=f"{ai_service_url}/generate_sound", 
-            whisper_url=f"{ai_service_url}/process_audio"
+            colab_url=f"{image_service_url}/generate-image", 
+            voice_url=f"{voice_service_url}/generate_sound", 
+            whisper_url=f"{whisper_service_url}/process_audio"
         )
         logger.info("StoryIterationChain service created successfully")
         return service
