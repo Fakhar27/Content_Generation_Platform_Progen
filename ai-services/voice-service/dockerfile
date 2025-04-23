@@ -1,0 +1,13 @@
+FROM progen-base-image:latest
+
+# Install only the additional dependencies needed
+RUN pip3 install --no-cache-dir \
+    transformers \
+    scipy
+
+# Copy application code
+COPY app.py .
+
+EXPOSE 5000
+
+CMD ["python3", "app.py"]

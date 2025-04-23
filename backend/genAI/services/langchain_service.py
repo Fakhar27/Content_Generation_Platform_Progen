@@ -80,9 +80,15 @@ class StoryIterationChain:
             callbacks=[self.token_callback]
         )
         
-        self.voice_url = voice_url or os.getenv("VOICE_SERVICE_URL", "http://voice-service:5000") + "/generate_sound"
-        self.whisper_url = whisper_url or os.getenv("WHISPER_SERVICE_URL", "http://whisper-service:5000") + "/process_audio"
-        self.colab_url = colab_url or os.getenv("IMAGE_SERVICE_URL", "http://image-service:5000") + "/generate-image"
+        # Service URLs from environment variables or constructor parameters
+        IMAGE_SERVICE_URL = os.getenv("IMAGE_SERVICE_URL", "http://image-service:5000")
+        VOICE_SERVICE_URL = os.getenv("VOICE_SERVICE_URL", "http://voice-service:5000")
+        WHISPER_SERVICE_URL = os.getenv("WHISPER_SERVICE_URL", "http://whisper-service:5000")
+        
+        # Use explicit parameters if provided, otherwise use environment variables
+        self.colab_url = colab_url or f"{IMAGE_SERVICE_URL}/generate-image"
+        self.voice_url = voice_url or f"{VOICE_SERVICE_URL}/generate_sound"
+        self.whisper_url = whisper_url or f"{WHISPER_SERVICE_URL}/process_audio"
         
         self.colab_url = colab_url or os.getenv("COLAB_URL")
         self.prefixes = {

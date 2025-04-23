@@ -1,6 +1,15 @@
 version: '3.8'
 
 services:
+  # Build the base image first
+  base-image:
+    build:
+      context: ./ai-services/base-image
+      dockerfile: Dockerfile
+    image: progen-base-image:latest
+    deploy:
+      replicas: 0  # This service doesn't need to run, just build
+
   frontend:
     build:
       context: ./Fyp-Frontend-2
@@ -54,37 +63,46 @@ services:
 
   image-service:
     build:
-      context: ./image-service
+      context: ./ai-services/image-service
       dockerfile: Dockerfile
+    depends_on:
+      - base-image  # Ensure base image is built first
     ports:
-      - "5001:5000"  # Map to different host port to avoid conflicts
+      - "5001:5000"
     volumes:
-      - ./image-service/logs:/app/logs
+      - shared-model-cache:/root/.cache/huggingface  # Share cache between services
     networks:
       - progen-network
 
   voice-service:
     build:
-      context: ./voice-service
+      context: ./ai-services/voice-service
       dockerfile: Dockerfile
+    depends_on:
+      - base-image  # Ensure base image is built first
     ports:
-      - "5002:5000"  # Map to different host port to avoid conflicts
+      - "5002:5000"
     volumes:
-      - ./voice-service/logs:/app/logs
+      - shared-model-cache:/root/.cache/huggingface  # Share cache between services
     networks:
       - progen-network
 
   whisper-service:
     build:
-      context: ./whisper-service
+      context: ./ai-services/whisper-service
       dockerfile: Dockerfile
+    depends_on:
+      - base-image  # Ensure base image is built first
     ports:
-      - "5003:5000"  # Map to different host port to avoid conflicts
+      - "5003:5000"
     volumes:
-      - ./whisper-service/logs:/app/logs
+      - shared-model-cache:/root/.cache/huggingface  # Share cache between services
     networks:
       - progen-network
 
 networks:
   progen-network:
     driver: bridge
+
+volumes:
+  shared-model-cache:  # This allows all services to share the downloaded models
