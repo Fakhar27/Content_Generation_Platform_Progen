@@ -1,5 +1,5 @@
-flask==2.3.3
-flask-cors==4.0.0
-torch==2.1.0
-faster-whisper==0.10.0
-numpy==1.26.0
+flask
+flask-cors
+torch
+faster-whisper
+numpy
